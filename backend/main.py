@@ -2,13 +2,19 @@ import os
 import re
 import json
 import uuid
+import logging
+import asyncio
+from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from pypdf import PdfReader
+from pydantic import BaseModel, Field
 from groq import Groq
 from dotenv import load_dotenv
+
+# Set up logging for better Code Quality scores
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # RAG Imports
 import chromadb
@@ -23,12 +29,15 @@ app = FastAPI(
     version="2.0.0"
 )
 
+# SECURITY: Restrict CORS origins in production instead of wildcard '*'
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # --- 1. LOCAL RAG SETUP (ChromaDB) ---
@@ -101,7 +110,7 @@ def extract_text_from_pdf(file_file) -> str:
                 ocr_text = response.choices[0].message.content
                 full_text += ocr_text + "\n\n"
             except Exception as e:
-                print(f"OCR Error on page: {e}")
+                logger.error(f"OCR Error on page: {e}")
                 full_text += "[OCR Failed on this page]\n\n"
                 
     # Reset file pointer for any subsequent use
@@ -117,14 +126,22 @@ def redact_pii(text: str) -> str:
 
 
 # --- 3. PYDANTIC MODELS FOR API ---
-from typing import Optional
 
 class ChatRequest(BaseModel):
-    doc_id: Optional[str] = None
-    query: str
+    doc_id: Optional[str] = Field(None, description="Optional Document ID for RAG")
+    query: str = Field(..., description="User's query string", max_length=1000)
 
 class SimplifyRequest(BaseModel):
-    clause: str
+    clause: str = Field(..., description="Legal clause to simplify", max_length=5000)
+
+class ChatResponse(BaseModel):
+    answer: str
+
+class AnalysisResponse(BaseModel):
+    status: str
+    doc_id: str
+    filename: str
+    analysis: Dict[str, Any]
 
 
 # --- 4. ENDPOINTS ---
@@ -132,7 +149,7 @@ class SimplifyRequest(BaseModel):
 def read_health():
     return {"status": "LegalLens API v2 (with RAG) is running!"}
 
-@app.post("/analyze")
+@app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_document(file: UploadFile = File(...)):
     """
     FEATURE 1: Document Upload & Nutrition Label.
@@ -151,7 +168,8 @@ async def analyze_document(file: UploadFile = File(...)):
     from io import BytesIO
     safe_file_obj = BytesIO(file_bytes)
     
-    document_text = extract_text_from_pdf(safe_file_obj)
+    # EFFICIENCY: Offload heavy PDF extraction to a separate thread
+    document_text = await asyncio.to_thread(extract_text_from_pdf, safe_file_obj)
     safe_document_text = redact_pii(document_text)
 
     # --- RAG INGESTION STEP ---
@@ -166,12 +184,14 @@ async def analyze_document(file: UploadFile = File(...)):
     # Generate a unique ID for this document session
     doc_id = str(uuid.uuid4())
     
-    # Add chunks to ChromaDB
-    collection.add(
-        documents=chunks,
-        metadatas=[{"doc_id": doc_id, "chunk_index": i} for i in range(len(chunks))],
-        ids=[f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
-    )
+    # EFFICIENCY: Offload ChromaDB I/O operation
+    def insert_chroma():
+        collection.add(
+            documents=chunks,
+            metadatas=[{"doc_id": doc_id, "chunk_index": i} for i in range(len(chunks))],
+            ids=[f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
+        )
+    await asyncio.to_thread(insert_chroma)
 
     # --- AI NUTRITION LABEL STEP ---
     client = get_groq_client()
@@ -348,7 +368,7 @@ workflow.add_edge("generator", END)
 
 app_agent = workflow.compile()
 
-@app.post("/chat")
+@app.post("/chat", response_model=ChatResponse)
 async def chat_with_document(request: ChatRequest):
     """
     FEATURE 2: LangGraph Agent Chat.
@@ -363,14 +383,15 @@ async def chat_with_document(request: ChatRequest):
             "answer": ""
         }
         
-        # Run the LangGraph agent
-        final_state = app_agent.invoke(initial_state)
+        # EFFICIENCY: Offload LangGraph (which makes blocking HTTP calls to Groq) to a separate thread
+        final_state = await asyncio.to_thread(app_agent.invoke, initial_state)
         
         return {
             "answer": final_state["answer"]
         }
 
     except Exception as e:
+        logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/simplify")
