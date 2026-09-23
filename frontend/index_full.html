@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LegalLens — Intelligent Legal Analysis</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Ambient background glow effects (Apple/Tesla aesthetic) -->
+  <div class="ambient-glow top-left"></div>
+  <div class="ambient-glow center-right"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <span class="brand-logo">§</span>
+        <span class="brand-name">LegalLens</span>
+        <span class="brand-tag">v2.0 RAG</span>
+      </div>
+
+      <div class="nav-status">
+        <div class="status-indicator">
+          <span class="status-dot" id="apiStatusDot"></span>
+          <span class="status-text" id="apiStatusText">Connecting to API...</span>
+        </div>
+      </div>
+
+      <div class="nav-disclaimer">
+        <span class="badge-disclaimer">Educational & Informational Only • Not Legal Advice</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-pill">Autonomous Contract Intelligence</div>
+      <h1 class="hero-title">Clear contracts.<br><span class="gradient-text">Zero surprises.</span></h1>
+      <p class="hero-subtitle">
+        Understand risks, extract key obligations, query local document embeddings, and prepare sharp questions for your attorney in seconds.
+      </p>
+    </section>
+
+    <!-- Upload & Document Ingestion Area -->
+    <section class="upload-section">
+      <div class="upload-card" id="dropZone">
+        <input type="file" id="fileInput" accept=".pdf" class="file-input-hidden">
+        <div class="upload-icon-wrapper">
+          <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+          </svg>
+        </div>
+        <h3 class="upload-heading">Drop your legal agreement here</h3>
+        <p class="upload-subtext">Supports PDF contracts, leases, NDAs, and service agreements</p>
+        <button class="btn-primary" id="browseBtn" type="button">Select Document</button>
+        
+        <div class="security-note">
+          <span class="shield-icon">🛡️</span>
+          <span>Automatic PII Scrubbing active (SSNs, phone numbers, and emails redacted before AI analysis)</span>
+        </div>
+
+        <!-- Processing States -->
+        <div class="progress-container" id="progressContainer" style="display: none;">
+          <div class="progress-bar-wrapper">
+            <div class="progress-bar-fill" id="progressBar"></div>
+          </div>
+          <div class="progress-status" id="progressStatus">Sanitizing and chunking document...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Active Analysis Workspace (Hidden until file is loaded) -->
+    <section class="workspace-section" id="workspaceSection" style="display: none;">
+      <!-- Document Summary Bar -->
+      <div class="session-bar">
+        <div class="session-doc-info">
+          <span class="file-badge">PDF</span>
+          <span class="file-name" id="sessionFileName">contract.pdf</span>
+          <span class="session-id-tag">Session ID: <code id="sessionDocId">--</code></span>
+        </div>
+        <div class="session-actions">
+          <button class="btn-ghost" id="exportBtn" title="Export Legal Brief">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Print Lawyer Brief
+          </button>
+          <button class="btn-ghost" id="newDocBtn">Upload Another</button>
+        </div>
+      </div>
+
+      <!-- Segmented Navigation (Apple / Tesla style tabs) -->
+      <div class="tab-control">
+        <button class="tab-btn active" data-tab="tab-nutrition">Nutrition Label</button>
+        <button class="tab-btn" data-tab="tab-chat">RAG Document Chat</button>
+        <button class="tab-btn" data-tab="tab-translate">Jargon Translator</button>
+        <button class="tab-btn" data-tab="tab-anomaly">Clause Benchmark</button>
+      </div>
+
+      <!-- TAB 1: Bento Nutrition Label -->
+      <div class="tab-pane active" id="tab-nutrition">
+        <div class="bento-grid">
+          <!-- Critical Risks Card -->
+          <div class="bento-card card-risk">
+            <div class="card-header">
+              <span class="card-indicator red-glow"></span>
+              <h2 class="card-title">Critical Risks & Liabilities</h2>
+              <span class="card-count" id="riskCount">0</span>
+            </div>
+            <p class="card-desc">Clauses carrying heavy financial, non-compete, or legal burdens.</p>
+            <ul class="item-list" id="riskList">
+              <li class="loading-placeholder">Waiting for document...</li>
+            </ul>
+          </div>
+
+          <!-- Obligations Card -->
+          <div class="bento-card card-obligation">
+            <div class="card-header">
+              <span class="card-indicator amber-glow"></span>
+              <h2 class="card-title">Mandatory Obligations</h2>
+              <span class="card-count" id="obligationCount">0</span>
+            </div>
+            <p class="card-desc">Explicit duties, deadlines, payment terms, or notice requirements.</p>
+            <ul class="item-list" id="obligationList">
+              <li class="loading-placeholder">Waiting for document...</li>
+            </ul>
+          </div>
+
+          <!-- Your Rights Card -->
+          <div class="bento-card card-rights">
+            <div class="card-header">
+              <span class="card-indicator emerald-glow"></span>
+              <h2 class="card-title">Retained Rights & Defenses</h2>
+              <span class="card-count" id="rightsCount">0</span>
+            </div>
+            <p class="card-desc">Protective terms, carve-outs, IP ownership, and whistleblower exceptions.</p>
+            <ul class="item-list" id="rightsList">
+              <li class="loading-placeholder">Waiting for document...</li>
+            </ul>
+          </div>
+
+          <!-- Attorney Prep Kit Card -->
+          <div class="bento-card card-questions">
+            <div class="card-header">
+              <span class="card-indicator violet-glow"></span>
+              <h2 class="card-title">Lawyer Preparation Brief</h2>
+              <span class="card-count" id="questionCount">0</span>
+            </div>
+            <p class="card-desc">Targeted, high-leverage questions to bring to a consultation.</p>
+            <ul class="item-list item-list-numbered" id="questionsList">
+              <li class="loading-placeholder">Waiting for document...</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Local RAG Chat -->
+      <div class="tab-pane" id="tab-chat">
+        <div class="chat-container">
+          <div class="chat-header">
+            <div>
+              <h3 class="chat-title">Interactive Document Query</h3>
+              <p class="chat-desc">Backed by ChromaDB vector retrieval & Qwen 27B LPU inference</p>
+            </div>
+            <span class="rag-chip">Local Vector Store Active</span>
+          </div>
+
+          <!-- Suggestion Chips -->
+          <div class="prompt-chips">
+            <button class="chip" data-query="What are the penalties or liquidated damages for a breach?">What are the breach penalties?</button>
+            <button class="chip" data-query="How can either party terminate this agreement?">Termination requirements?</button>
+            <button class="chip" data-query="Who owns the intellectual property and work product?">Who owns the IP?</button>
+            <button class="chip" data-query="Are there any non-compete or non-solicitation restrictions?">Non-compete clauses?</button>
+          </div>
+
+          <!-- Messages Stream -->
+          <div class="chat-messages" id="chatMessages">
+            <div class="message assistant-msg">
+              <div class="msg-avatar">§</div>
+              <div class="msg-body">
+                <p>I have indexed your document into the local vector database. You can ask me specific questions about clauses, deadlines, fees, or obligations.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Bar -->
+          <form class="chat-input-wrapper" id="chatForm">
+            <input type="text" id="chatInput" placeholder="Ask anything about this document..." autocomplete="off">
+            <button type="submit" class="btn-send" id="chatSendBtn" aria-label="Send query">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 3: Jargon Translator -->
+      <div class="tab-pane" id="tab-translate">
+        <div class="tool-panel">
+          <div class="tool-intro">
+            <h3>Legalese to Plain English</h3>
+            <p>Paste dense, confusing legalese below to uncover the real-world, practical meaning.</p>
+          </div>
+          <div class="tool-form">
+            <textarea id="translateInput" rows="5" placeholder="Paste complex clause text here (e.g. 'The Party of the First Part shall hold harmless, indemnify, and defend...')"></textarea>
+            <div class="tool-actions">
+              <button class="btn-secondary" id="sampleClauseBtn">Insert Sample Clause</button>
+              <button class="btn-primary" id="runTranslateBtn">Translate to Plain English</button>
+            </div>
+          </div>
+          <div class="tool-output-card" id="translateOutputCard" style="display: none;">
+            <div class="output-label">Plain English Translation</div>
+            <div class="output-content" id="translateOutputText"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: Clause Benchmark -->
+      <div class="tab-pane" id="tab-anomaly">
+        <div class="tool-panel">
+          <div class="tool-intro">
+            <h3>Standard Deviation Inspector</h3>
+            <p>Check if a specific term is Standard, Unusual, or Aggressive compared to market standards.</p>
+          </div>
+          <div class="tool-form">
+            <textarea id="anomalyInput" rows="5" placeholder="Paste clause to benchmark (e.g. 'Contractor agrees to a 48-month global non-compete without additional severance compensation...')"></textarea>
+            <div class="tool-actions">
+              <button class="btn-secondary" id="sampleAnomalyBtn">Insert Sample Aggressive Clause</button>
+              <button class="btn-primary" id="runAnomalyBtn">Evaluate Against Standards</button>
+            </div>
+          </div>
+          <div class="tool-output-card" id="anomalyOutputCard" style="display: none;">
+            <div class="output-label">Market Benchmark Assessment</div>
+            <div class="output-content" id="anomalyOutputText"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <span class="footer-brand">LegalLens</span>
+        <span class="footer-sub">Engineered for legal transparency and client-lawyer synergy.</span>
+      </div>
+      <div class="footer-right">
+        <span>FastAPI</span> • <span>ChromaDB RAG</span> • <span>Groq LPU</span> • <span>Zero External Frameworks</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Environments
+venv/
+env/
+.env
+.venv/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local vector database
+chroma_db/
+
+# Testing / IDEs
+.pytest_cache/
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db

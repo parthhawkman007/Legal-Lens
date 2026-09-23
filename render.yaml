@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: legal-lens
+    env: python
+    region: ohio
+    plan: free
+    buildCommand: "cd backend && pip install -r requirements.txt && pip install langgraph PyMuPDF"
+    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GROQ_API_KEY
+        sync: false
+      - key: WEB_SEARCH_API_KEY
+        sync: false

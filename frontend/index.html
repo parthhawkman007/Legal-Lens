@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legal Lens</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Floating Top-Left Button -->
+  <button id="sidebarToggleBtn" class="floating-sidebar-btn" aria-label="Open conversation history">
+    <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+    </svg>
+    <span>Previous Chats</span>
+  </button>
+
+  <!-- Top Center: Small Legal Lens + Shortened Disclaimer Underneath -->
+  <div class="top-brand-lockup">
+    <h1 class="brand-title">Legal Lens</h1>
+    <div class="brand-disclaimer">Informational only • Not legal advice</div>
+  </div>
+
+  <!-- Slide-out Sidebar for Previous Conversations -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <aside class="sidebar-drawer" id="sidebarDrawer" aria-hidden="true">
+    <div class="sidebar-header">
+      <div class="sidebar-title-group">
+        <span class="gold-icon">§</span>
+        <h2>History & Records</h2>
+      </div>
+      <button class="btn-close-sidebar" id="sidebarCloseBtn" aria-label="Close sidebar">✕</button>
+    </div>
+
+    <div class="sidebar-actions">
+      <button class="btn-new-session" id="newSessionBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-plus">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Start New Analysis
+      </button>
+    </div>
+
+    <div class="history-list" id="historyList">
+      <div class="history-group-label">Recent Documents</div>
+      
+      <div class="history-item active">
+        <div class="history-item-top">
+          <span class="history-doc-title">Confidentiality_NDA.pdf</span>
+          <span class="history-time">Today</span>
+        </div>
+        <div class="history-snippet">Extracted 2 risks, $50,000 penalty flagged...</div>
+      </div>
+
+      <div class="history-item">
+        <div class="history-item-top">
+          <span class="history-doc-title">Residential_Lease_Agreement.pdf</span>
+          <span class="history-time">Yesterday</span>
+        </div>
+        <div class="history-snippet">Late fee clause analyzed, 3 questions prepared...</div>
+      </div>
+
+      <div class="history-item">
+        <div class="history-item-top">
+          <span class="history-doc-title">Master_Services_Contract.pdf</span>
+          <span class="history-time">Sep 21</span>
+        </div>
+        <div class="history-snippet">ChromaDB indexed, IP ownership verified...</div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-info">
+        <span>Session Data Stored Locally</span>
+        <span class="security-lock">🔒 Zero Cloud Retention</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Canvas Area -->
+  <main class="main-canvas" id="mainCanvas">
+    <!-- Center Screen: Animated 'At Your Service' -->
+    <div class="hero-center" id="heroCenter">
+      <h2 class="hero-text-service">At Your Service</h2>
+    </div>
+
+    <!-- Chat Feed (Initially Hidden) -->
+    <div class="chat-feed" id="chatFeed" role="log" aria-live="polite" style="display: none;"></div>
+
+    <!-- Bottom Center: Compact Chat Capsule with Shimmer Animation -->
+    <div class="capsule-wrapper" role="search">
+      <!-- Attached Document Pill (Appears when a file is selected) -->
+      <div class="capsule-attachment-badge" id="capsuleAttachmentBadge" style="display: none;">
+        <span class="pdf-icon" aria-hidden="true">PDF</span>
+        <span class="attachment-name" id="attachmentName">contract.pdf</span>
+        <button type="button" class="btn-remove-attachment" id="btnRemoveAttachment" aria-label="Remove attached file" title="Remove file">✕</button>
+      </div>
+
+      <div class="chat-capsule" id="chatCapsule">
+        <!-- Document Upload / Share Button -->
+        <input type="file" id="capsuleFileInput" aria-label="File upload input" accept=".pdf" style="display: none;">
+        <button type="button" class="capsule-action-btn" id="capsuleDocBtn" aria-label="Upload contract or legal document" title="Upload contract or legal document">
+          <svg class="icon-clip" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.37l-10.94 10.94a1.5 1.5 0 01-2.122-2.122l7.693-7.693" />
+          </svg>
+        </button>
+
+        <!-- Input Field -->
+        <input type="text" id="capsuleInput" class="capsule-input" aria-label="Message input field" placeholder="Ask a question or upload a document..." autocomplete="off">
+
+        <!-- Send Arrow Button -->
+        <button type="button" class="capsule-send-btn" id="capsuleSendBtn" aria-label="Send">
+          <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
