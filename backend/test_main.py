@@ -20,24 +20,32 @@ def test_pii_redaction():
     assert "[REDACTED_PHONE]" in safe_text
     assert "[REDACTED_SSN]" in safe_text
 
+from unittest.mock import patch
+
 def test_chat_without_doc_id():
     # Ensures the general chat endpoint handles missing doc_ids properly
     payload = {
         "query": "Hello",
         "doc_id": None
     }
-    response = client.post("/chat", json=payload)
+    with patch('main.app_agent.invoke') as mock_invoke:
+        mock_invoke.return_value = {"answer": "Mocked Answer"}
+        response = client.post("/chat", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert "answer" in data
-    assert len(data["answer"]) > 0
+    assert data["answer"] == "Mocked Answer"
 
 def test_anomaly_check():
-    # Test the standalone legacy endpoint
+    # Test the standalone legacy endpoint with mock
     payload = {
         "clause": "The provider shall have zero liability in the event of any damages whatsoever."
     }
-    response = client.post("/anomaly-check", json=payload)
+    with patch('main.get_groq_client') as mock_client:
+        mock_client.return_value.chat.completions.create.return_value.choices = [
+            type('obj', (object,), {'message': type('obj', (object,), {'content': 'Mocked Analysis'})()})
+        ]
+        response = client.post("/anomaly-check", json=payload)
     assert response.status_code == 200
     assert "analysis" in response.json()
 
@@ -54,7 +62,11 @@ def test_simplify_clause():
     payload = {
         "clause": "Notwithstanding anything to the contrary herein..."
     }
-    response = client.post("/simplify", json=payload)
+    with patch('main.get_groq_client') as mock_client:
+        mock_client.return_value.chat.completions.create.return_value.choices = [
+            type('obj', (object,), {'message': type('obj', (object,), {'content': 'Mocked Simplification'})()})
+        ]
+        response = client.post("/simplify", json=payload)
     assert response.status_code == 200
     assert "simplified_explanation" in response.json()
 

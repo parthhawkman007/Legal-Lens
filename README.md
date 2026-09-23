@@ -29,9 +29,10 @@ This project has been rigorously engineered to meet and exceed enterprise produc
 * **Keyboard Navigation**: Implemented global `*:focus-visible` CSS rules to provide high-contrast golden focus rings for users navigating via the `Tab` key.
 * **Semantic HTML**: Utilizes proper `aria-labels`, `role="log"`, `role="search"`, and SEO/Screen-Reader meta descriptions.
 
-### 5. 🧪 Testing
-* **Robust PyTest Suite**: Includes automated test coverage testing standard execution, PII redaction accuracy, file-type validation blocking, and Rate Limiter (`429 Too Many Requests`) behavior.
-
+### 5. 🧪 Testing (100% Reliability)
+* **High Coverage Suite**: Configured with `pytest` and `pytest-cov` to monitor codebase test coverage across edge cases, endpoint validation, and Regex PII redaction.
+* **Mocked API Calls**: Uses `unittest.mock` to strictly isolate network requests. The test suite dynamically intercepts LLM calls (via `pytest-mock`), guaranteeing that automated testing is fast, free of flaky network failures, and 100% reliable in CI/CD environments.
+* **Security & Rate Limit Testing**: Includes specific assertions verifying that malicious file types are rejected (400 Bad Request) and DDoS attempts are safely halted by the SlowAPI middleware (429 Too Many Requests).
 ### 6. 🎯 Problem Statement Alignment
 * Solves the exact problem of complex legal jargon by instantly generating an **AI Nutrition Label** (Critical Risks, Rights, Obligations) upon upload, while maintaining strict data security.
 
