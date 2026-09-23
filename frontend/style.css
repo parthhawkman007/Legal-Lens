@@ -693,3 +693,7 @@ html, body {
   0%, 80%, 100% { transform: scale(0); }
   40% { transform: scale(1); }
 }
+ 
+ / *   A 1 1 Y   K e y b o a r d   N a v i g a t i o n   * /  
+ * : f o c u s - v i s i b l e   {   o u t l i n e :   2 p x   s o l i d   # C 5 A 0 5 9 ;   o u t l i n e - o f f s e t :   2 p x ;   }  
+ 

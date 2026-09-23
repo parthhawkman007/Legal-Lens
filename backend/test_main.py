@@ -40,3 +40,27 @@ def test_anomaly_check():
     response = client.post("/anomaly-check", json=payload)
     assert response.status_code == 200
     assert "analysis" in response.json()
+
+def test_analyze_invalid_file_extension():
+    # Verify security blocks non-PDFs
+    response = client.post(
+        "/analyze",
+        files={"file": ("test.txt", b"dummy content", "text/plain")}
+    )
+    assert response.status_code == 400
+    assert "Security Error" in response.json()["detail"]
+
+def test_simplify_clause():
+    payload = {
+        "clause": "Notwithstanding anything to the contrary herein..."
+    }
+    response = client.post("/simplify", json=payload)
+    assert response.status_code == 200
+    assert "simplified_explanation" in response.json()
+
+def test_rate_limiter():
+    # Rapidly hit the health endpoint to trigger the 10/minute rate limit
+    for _ in range(10):
+        client.get("/api/health")
+    response = client.get("/api/health")
+    assert response.status_code == 429  # Too Many Requests

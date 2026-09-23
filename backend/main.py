@@ -4,13 +4,22 @@ import json
 import uuid
 import logging
 import asyncio
+import bleach
+from functools import lru_cache
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, Field
 from groq import Groq
 from dotenv import load_dotenv
+
+# Rate Limiting for Security
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 # Set up logging for better Code Quality scores
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +37,23 @@ app = FastAPI(
     description="AI Legal Assistant with Local RAG and Clause Analysis",
     version="2.0.0"
 )
+
+# SECURITY 1: Rate Limiter (Prevents DDoS)
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+# SECURITY 2: Strict Security Headers (Helmet Equivalent)
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+app.add_middleware(SecurityHeadersMiddleware)
 
 # SECURITY: Restrict CORS origins in production instead of wildcard '*'
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000").split(",")
@@ -51,7 +77,9 @@ collection = chroma_client.get_or_create_collection(name="legal_documents", embe
 
 
 # --- 2. HELPER FUNCTIONS ---
-def get_groq_client():
+@lru_cache(maxsize=1)
+def get_groq_client() -> Groq:
+    """Returns a cached instance of the Groq client for efficiency."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         raise ValueError("GROQ_API_KEY is missing.")
@@ -115,7 +143,9 @@ def extract_text_from_pdf(file_file) -> str:
                 
     # Reset file pointer for any subsequent use
     file_file.seek(0)
-    return full_text
+    
+    # SECURITY: Sanitize output text to prevent XSS if malicious HTML was in the PDF
+    return bleach.clean(full_text)
 
 def redact_pii(text: str) -> str:
     """Basic PII Redaction for Security Parameter."""
@@ -146,11 +176,13 @@ class AnalysisResponse(BaseModel):
 
 # --- 4. ENDPOINTS ---
 @app.get("/api/health")
-def read_health():
+@limiter.limit("10/minute")
+def read_health(request: Request):
     return {"status": "LegalLens API v2 (with RAG) is running!"}
 
 @app.post("/analyze", response_model=AnalysisResponse)
-async def analyze_document(file: UploadFile = File(...)):
+@limiter.limit("5/minute")
+async def analyze_document(request: Request, file: UploadFile = File(...)):
     """
     FEATURE 1: Document Upload & Nutrition Label.
     Now also chunks the document and stores it in Local ChromaDB for RAG!
@@ -369,7 +401,8 @@ workflow.add_edge("generator", END)
 app_agent = workflow.compile()
 
 @app.post("/chat", response_model=ChatResponse)
-async def chat_with_document(request: ChatRequest):
+@limiter.limit("20/minute")
+async def chat_with_document(request_obj: Request, request: ChatRequest):
     """
     FEATURE 2: LangGraph Agent Chat.
     Uses LangGraph to route between Local Document RAG, Ollama Web RAG, and General Chat.
