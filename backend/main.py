@@ -42,7 +42,7 @@ load_dotenv()
 
 app = FastAPI(
     title="LegalLens Backend",
-    description="AI Legal Assistant with Local RAG and Clause Analysis",
+    description="AI Legal Assistant solving the problem of complex legal jargon by instantly translating dense clauses into transparent, simple terms.",
     version="2.0.0",
 )
 

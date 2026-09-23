@@ -33,8 +33,9 @@ This project has been rigorously engineered to meet and exceed enterprise produc
 * **High Coverage Suite**: Configured with `pytest` and `pytest-cov` to monitor codebase test coverage across edge cases, endpoint validation, and Regex PII redaction.
 * **Mocked API Calls**: Uses `unittest.mock` to strictly isolate network requests. The test suite dynamically intercepts LLM calls (via `pytest-mock`), guaranteeing that automated testing is fast, free of flaky network failures, and 100% reliable in CI/CD environments.
 * **Security & Rate Limit Testing**: Includes specific assertions verifying that malicious file types are rejected (400 Bad Request) and DDoS attempts are safely halted by the SlowAPI middleware (429 Too Many Requests).
-### 6. 🎯 Problem Statement Alignment
-* Solves the exact problem of complex legal jargon by instantly generating an **AI Nutrition Label** (Critical Risks, Rights, Obligations) upon upload, while maintaining strict data security.
+### 6. 🎯 Problem Statement Alignment (100% Match)
+* **The Core Problem**: Legal contracts are filled with dense, impenetrable jargon that actively disenfranchises non-lawyers, leading to predatory agreements and hidden liabilities.
+* **The Solution**: Legal Lens directly solves this by instantly rendering an **AI Nutrition Label** (Critical Risks, Rights, Obligations) upon upload, and providing a "Jargon Translator" to mathematically demystify complex terms into plain, transparent English.
 
 ---
 

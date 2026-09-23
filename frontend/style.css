@@ -696,4 +696,6 @@ html, body {
  
  / *   A 1 1 Y   K e y b o a r d   N a v i g a t i o n   * /  
  * : f o c u s - v i s i b l e   {   o u t l i n e :   2 p x   s o l i d   # C 5 A 0 5 9 ;   o u t l i n e - o f f s e t :   2 p x ;   }  
+  
+ . s r - o n l y   {   p o s i t i o n :   a b s o l u t e ;   w i d t h :   1 p x ;   h e i g h t :   1 p x ;   p a d d i n g :   0 ;   m a r g i n :   - 1 p x ;   o v e r f l o w :   h i d d e n ;   c l i p :   r e c t ( 0 , 0 , 0 , 0 ) ;   b o r d e r :   0 ;   }  
  
