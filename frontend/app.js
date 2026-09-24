@@ -237,9 +237,12 @@ async function sendChatQuery(query) {
 
   try {
     const payload = {
-      query: query,
-      doc_id: currentDocId
+      query: query
     };
+    
+    if (currentDocId) {
+        payload.doc_id = currentDocId;
+    }
 
     const res = await fetch(`${API_BASE}/chat`, {
       method: "POST",
@@ -247,7 +250,17 @@ async function sendChatQuery(query) {
       body: JSON.stringify(payload)
     });
 
-    if (!res.ok) throw new Error("Chat request failed.");
+    if (!res.ok) {
+        let errMsg = "Chat request failed.";
+        try {
+            const errData = await res.json();
+            if (errData.detail) {
+                if (typeof errData.detail === 'string') errMsg = errData.detail;
+                else if (Array.isArray(errData.detail)) errMsg = errData.detail[0].msg;
+            }
+        } catch (e) {}
+        throw new Error(errMsg);
+    }
 
     const data = await res.json();
     removeLoader();
