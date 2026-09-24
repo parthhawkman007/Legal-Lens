@@ -475,15 +475,15 @@ app_agent = workflow.compile()
 
 @app.post("/chat", response_model=ChatResponse)
 @limiter.limit("20/minute")
-async def chat_with_document(request_obj: Request, request: ChatRequest):
+async def chat_with_document(request: Request, payload: ChatRequest):
     """
     FEATURE 2: LangGraph Agent Chat.
     Uses LangGraph to route between Local Document RAG, Ollama Web RAG, and General Chat.
     """
     try:
         initial_state = {
-            "query": request.query,
-            "doc_id": request.doc_id,
+            "query": payload.query,
+            "doc_id": payload.doc_id,
             "intent": "",
             "context": "",
             "answer": "",
@@ -501,7 +501,7 @@ async def chat_with_document(request_obj: Request, request: ChatRequest):
 
 @app.post("/simplify")
 @limiter.limit("10/minute")
-async def simplify_clause(request_obj: Request, request: SimplifyRequest):
+async def simplify_clause(request: Request, payload: SimplifyRequest):
     """
     FEATURE 3: The Jargon Translator.
     Takes a dense legal clause and explains it in simple terms.
@@ -515,7 +515,7 @@ async def simplify_clause(request_obj: Request, request: SimplifyRequest):
                 model="qwen/qwen3.8-27b",
                 messages=[
                     {"role": "system", "content": prompt},
-                    {"role": "user", "content": request.clause},
+                    {"role": "user", "content": payload.clause},
                 ],
                 temperature=0.3,
             )
@@ -529,7 +529,7 @@ async def simplify_clause(request_obj: Request, request: SimplifyRequest):
 
 @app.post("/anomaly-check")
 @limiter.limit("10/minute")
-async def detect_anomalies(request_obj: Request, request: SimplifyRequest):
+async def detect_anomalies(request: Request, payload: SimplifyRequest):
     """
     FEATURE 4: "Is this standard?" Check.
     Checks a specific clause against standard industry practices.
@@ -543,7 +543,7 @@ async def detect_anomalies(request_obj: Request, request: SimplifyRequest):
                 model="qwen/qwen3.8-27b",
                 messages=[
                     {"role": "system", "content": prompt},
-                    {"role": "user", "content": request.clause},
+                    {"role": "user", "content": payload.clause},
                 ],
                 temperature=0.2,
             )
